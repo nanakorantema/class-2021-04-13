@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = FALSE)
 library(primer.data)
 library(tidyverse)
 library(rstanarm)
+library(ggdist)
+library(tidybayes)
 
 # Check out the raw cces tibble, especially the faminc (family income) and
 # ideology variables.
@@ -73,8 +75,79 @@ For every increase in family income the ideology decreases by .047, meaning that
 $ideology_{i} = \beta_0 + \beta_1 faminc_{i} + \epsilon_{i}$
 
 $\beta_0$ = the intercept and is the median ideology (ideology at $0 income), which in this case is 3.471 (slightly left of the center)
-$\beta_1 faminc_{i}$ = the amount that an increase in family income causes a .047 decrease in family income
+$\beta_1 faminc_{i}$ = when comparing two families, we predict that the richer family sees a  .047 deacrease in ideology compared to the family with smaller income
+
+
+causal or predictive claim?
+
+CAUSAL always has two predictive outcomes, this model is causal because there is manipulation (in this case change in income), but you should be weary because this WAS NOT AN EXPERIMENT, so we cannot really make causal claims. 
+
+When comparing two different families, the family that is one unit richer we could expect to have a slightly lower (more liberal) ideology than the family with the smaller income
+
+```{r fit_2}
+
+fit_2 <- stan_glm(ideology ~ faminc + gender + faminc*gender,
+                  data = x,
+                  refresh = 0,
+                  seed = 222)
+
+print(fit_2, digits = 3)
+```
+$ideology_{i} = \beta_0 + \beta_1 faminc_{i} + \beta_3 gender_{i} + \beta_2 faminc_{i}*gender + \epsilon_{i}$
+
+$\beta_0$ = predicted ideology (3.594) of a woman when their income is 0
+
+$\beta_1 faminc_{i}$ = slope for women 0.071 decrease in ideology for richer female between two females
+
+$\beta_3 gendermale_{i}$ = 
+
+$\beta_2 faminc_{i}*gender$ beta_1 + beta_3 = 0.053 + -.071
+faminc*gender does vary between men and women
+
+*Does your conclusion change if we "adjust" for race and age?*
+
+How does this connect to the data
+
+```{r}
+
+fit_3 <- stan_glm(ideology ~ age + race + faminc + gender + faminc*gender,
+                  data = x,
+                  refresh = 0,
+                  seed = 39)
+
+print(fit_3, digits = 3)
+
+#interaction term hasn't been impacted which is good
+```
 
 
 ## Temperance
+
+```{r}
+#plot
+
+age <- 50
+race <- c("White", "Black")
+gender <- c("Male", "Female")
+faminc <- c(1, 6, 12)
+
+newobs <- tibble(expand_grid(age, race, gender, faminc))
+
+z <- add_fitted_draws(newobs, fit_3) %>% 
+  mutate(faminc = factor(faminc, levels = c(1, 6, 12)))
+
+z 
+
+z %>% 
+  ggplot(aes(x = .value,
+             y = faminc, 
+             fill = gender)) +
+    stat_slab(alpha = 0.5) +
+    labs(title = "Ideology versus Income and Gender",
+         subtitle = " Women's ideology varies mych more accroess family incomes", 
+         x = "Estimated Change in ideology",
+         y = "Family Income",
+         caption = "Source: cces")
+
+```
 
