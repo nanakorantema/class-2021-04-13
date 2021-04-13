@@ -1,6 +1,6 @@
 ---
 title: "Income and Ideology"
-author: "Your Name Here"
+author: Nana Koranteng
 date: "April 13, 2021"
 output: html_document
 ---
@@ -38,12 +38,42 @@ x <- cces %>%
 
 
 ## Wisdom
-
+- data from the US from 2006- 2019
+- we have information for all of the variable we will be exploring
 
 ## Justice
 
 
+```{r}
+
+x %>% 
+  ggplot(aes(x = faminc, y = ideology)) +
+  geom_jitter(alpha = 0.05) + 
+  geom_smooth(formula = y ~ x,
+              method = "lm")
+
+
+```
+
+
+
 ## Courage
+
+```{r fitted_model}
+
+fit_1 <- stan_glm( ideology ~ faminc,
+                   data = x,
+                   refresh = 0, 
+                   seed = 334)
+print(fit_1, digits = 3)
+```
+
+For every increase in family income the ideology decreases by .047, meaning that families that make more money become slightly more liberal
+
+$ideology_{i} = \beta_0 + \beta_1 faminc_{i} + \epsilon_{i}$
+
+$\beta_0$ = the intercept and is the median ideology (ideology at $0 income), which in this case is 3.471 (slightly left of the center)
+$\beta_1 faminc_{i}$ = the amount that an increase in family income causes a .047 decrease in family income
 
 
 ## Temperance
